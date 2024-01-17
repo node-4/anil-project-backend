@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const mongooseAggregatePaginate = require("mongoose-aggregate-paginate");
+const mongoosePaginate = require('mongoose-paginate-v2');
 const dryFruitSchema = new mongoose.Schema(
     {
         name: {
@@ -75,4 +77,6 @@ dryFruitSchema.virtual("totalSales").get(function () {
     return this.price * this.soldCount;
 });
 
+dryFruitSchema.plugin(mongoosePaginate);
+dryFruitSchema.plugin(mongooseAggregatePaginate);
 module.exports = mongoose.model("Product", dryFruitSchema);

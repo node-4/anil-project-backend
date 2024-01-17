@@ -10,10 +10,12 @@ const {
     deleteProduct,
     getMostSellingProducts,
     recommededProduct,
+    paginateProductSearch
 } = require("../controllers/product.controller");
 
 // Get all products
 router.get("/products", getAllProducts);
+router.get("/paginateProductSearch", paginateProductSearch);
 router.get("/products-recommended/:id", recommededProduct);
 // Get product by ID
 router.get("/products/:id", getProductById);
