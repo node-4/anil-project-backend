@@ -22,7 +22,7 @@ const createFamilyDeals = async (req, res) => {
 // API to get all gift boxes
 const getFamilyDeals = async (req, res) => {
     try {
-        const familyDealses = await FamilyDeals.find().populate("products");
+        const familyDealses = await FamilyDeals.find().populate("product");
         return createResponse(res, 200, "Gift boxes retrieved successfully", familyDealses);
     } catch (error) {
         console.error(error);
@@ -35,7 +35,7 @@ const getFamilyDealsById = async (req, res) => {
         const { id } = req.params;
 
         // Check if gift box exists in the database
-        const familyDeals = await FamilyDeals.findById(id).populate("products");
+        const familyDeals = await FamilyDeals.findById(id).populate("product");
         if (!familyDeals) {
             return createResponse(res, 404, "Gift box not found");
         }
