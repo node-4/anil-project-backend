@@ -23,6 +23,7 @@ router.use("/faqs", require("../routes/faq.route"));
 router.use("/", require("../routes/wholeSeller.route"));
 router.use("/festival-offers", require("../routes/festival.route"));
 router.use("/gift-boxes", require("../routes/giftBoxes.route"));
+router.use("/familyDeals", require("../routes/familyDeals.route"));
 router.use("/feedback", require("../routes/feedback.route"));
 router.use("/company-details", require("../routes/companyDetails"));
 router.use(
