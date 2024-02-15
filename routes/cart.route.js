@@ -1,11 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {
-    addToCart,
-    getCartItems,
-    updateCartItemQuantity,
-    removeFromCart,
-} = require("../controllers/cart.controller");
+const { addToCart, getCartItems, updateCartItemQuantity, removeFromCart, } = require("../controllers/cart.controller");
 const { authJwt } = require("../middleware");
 // Add item to cart
 
