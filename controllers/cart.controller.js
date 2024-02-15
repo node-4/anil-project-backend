@@ -1,47 +1,134 @@
-const {
-    InteractionContextImpl,
-} = require("twilio/lib/rest/flexApi/v1/interaction");
+const { InteractionContextImpl, } = require("twilio/lib/rest/flexApi/v1/interaction");
+const mongoose = require("mongoose");
 const Cart = require("../models/cart");
-
-// Add item to cart
-
+const User = require("../models/user");
 const { createResponse } = require("../utils/response");
-
 const addToCart = async (req, res) => {
     try {
         const { userId, productId } = req.body;
-
-        // Check if item is already in cart
-        let cartItem = await Cart.findOne({ userId, productId });
-
-        if (cartItem) {
-            // Update item quantity
-            cartItem.quantity += 1;
+        let findUser = await User.findById(userId);
+        if (!findUser) {
+            return createResponse(res, 404, "User not found");
+        } else {
+            let cartItem = await Cart.findOne({ userId, productId, userType: findUser.userType });
+            if (cartItem) {
+                cartItem.quantity += 1;
+                await cartItem.save();
+                return createResponse(res, 200, "Item added to cart successfully", cartItem);
+            }
+            cartItem = new Cart({ userId, productId, userType: findUser.userType });
             await cartItem.save();
-            return createResponse(
-                res,
-                200,
-                "Item added to cart successfully",
-                cartItem
-            );
+            return createResponse(res, 200, "Item added to cart successfully", cartItem);
         }
-
-        // Add new item to cart
-        cartItem = new Cart({ userId, productId });
-        await cartItem.save();
-        return createResponse(
-            res,
-            200,
-            "Item added to cart successfully",
-            cartItem
-        );
     } catch (error) {
         console.error(error);
         return createResponse(res, 500, "Internal server error");
     }
 };
-const mongoose = require("mongoose");
+const getCartItems = async (req, res) => {
+    try {
+        console.log(req.user.role);
+        const { userId } = req.params;
+        const cartItems = await Cart.find({ userId }).populate(
+            "productId"
+            // "productId.categoryId"
+        );
+        if (cartItems.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "cart is empty",
+            });
+        }
+        let totalItemCost = 0;
+        let totalCost = 0;
+        let totalDiscount = 0;
+        cartItems.forEach((item) => {
+            if (req.user.role === "Vendor") {
+                totalItemCost += item.productId.price * item.quantity;
+                totalDiscount =
+                    ((item.productId.discountPercent * item.productId.price) /
+                        100) *
+                    item.quantity;
 
+                totalCost +=
+                    (item.productId.price *
+                        (100 - item.productId.discountPercent) *
+                        item.quantity) /
+                    100;
+                console.log(totalItemCost);
+                console.log(totalCost);
+                // totalDiscount += item.productId.price * item.quantity;
+                // totalCost += item.productId.discountedPrice * item.quantity;
+            } else {
+                totalItemCost += item.productId.price * item.quantity;
+                totalCost +=
+                    (item.productId.price *
+                        (100 - item.productId.discountPercent) *
+                        item.quantity) /
+                    100;
+            }
+        });
+        console.log(totalCost);
+        if (req.user.role === "Vendor") {
+            return res.status(200).json({
+                success: true,
+                message: "Cart items retrieved successfully",
+                data: {
+                    cartItems: cartItems,
+                    subTotal: totalItemCost,
+                    totalDiscount: totalDiscount,
+                    total: totalCost,
+                },
+            });
+        } else {
+            return res.status(200).json({
+                success: true,
+                message: "Cart items retrieved successfully",
+                data: {
+                    cartItems: cartItems,
+                    subTotal: totalItemCost,
+                    totalDiscount: (totalItemCost - totalCost).toFixed(2),
+                    total: totalCost,
+                },
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+const updateCartItemQuantity = async (req, res) => {
+    try {
+        const { cartItemId } = req.params;
+        const { quantity } = req.body;
+        const updatedCartItem = await Cart.findByIdAndUpdate(
+            cartItemId,
+            { quantity: quantity },
+            { new: true }
+        );
+        res.status(200).json({
+            success: true,
+            message: "Cart item quantity updated successfully",
+            data: updatedCartItem,
+        });
+    } catch (error) {
+        console.error();
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
+const removeFromCart = async (req, res) => {
+    try {
+        const { cartItemId } = req.params;
+        await Cart.findByIdAndDelete(cartItemId);
+        res.status(200).json({
+            success: true,
+            message: "Item removed from cart successfully",
+        });
+    } catch (error) {
+        console.error();
+        res.status(400).json({ success: false, message: error.message });
+    }
+};
 const getCartItems2 = async (req, res) => {
     try {
         console.log(req.user.role);
@@ -132,115 +219,6 @@ const getCartItems2 = async (req, res) => {
     }
 };
 
-// Get all cart items for a user
-const getCartItems = async (req, res) => {
-    try {
-        console.log(req.user.role);
-        const { userId } = req.params;
-        const cartItems = await Cart.find({ userId }).populate(
-            "productId"
-            // "productId.categoryId"
-        );
-        if (cartItems.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "cart is empty",
-            });
-        }
-        let totalItemCost = 0;
-        let totalCost = 0;
-        let totalDiscount = 0;
-        cartItems.forEach((item) => {
-            if (req.user.role === "Vendor") {
-                totalItemCost += item.productId.price * item.quantity;
-                totalDiscount =
-                    ((item.productId.discountPercent * item.productId.price) /
-                        100) *
-                    item.quantity;
-
-                totalCost +=
-                    (item.productId.price *
-                        (100 - item.productId.discountPercent) *
-                        item.quantity) /
-                    100;
-                console.log(totalItemCost);
-                console.log(totalCost);
-                // totalDiscount += item.productId.price * item.quantity;
-                // totalCost += item.productId.discountedPrice * item.quantity;
-            } else {
-                totalItemCost += item.productId.price * item.quantity;
-                totalCost +=
-                    (item.productId.price *
-                        (100 - item.productId.discountPercent) *
-                        item.quantity) /
-                    100;
-            }
-        });
-        console.log(totalCost);
-        if (req.user.role === "Vendor") {
-            return res.status(200).json({
-                success: true,
-                message: "Cart items retrieved successfully",
-                data: {
-                    cartItems: cartItems,
-                    subTotal: totalItemCost,
-                    totalDiscount: totalDiscount,
-                    total: totalCost,
-                },
-            });
-        } else {
-            return res.status(200).json({
-                success: true,
-                message: "Cart items retrieved successfully",
-                data: {
-                    cartItems: cartItems,
-                    subTotal: totalItemCost,
-                    totalDiscount: (totalItemCost - totalCost).toFixed(2),
-                    total: totalCost,
-                },
-            });
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-// Update quantity of a cart item
-const updateCartItemQuantity = async (req, res) => {
-    try {
-        const { cartItemId } = req.params;
-        const { quantity } = req.body;
-        const updatedCartItem = await Cart.findByIdAndUpdate(
-            cartItemId,
-            { quantity: quantity },
-            { new: true }
-        );
-        res.status(200).json({
-            success: true,
-            message: "Cart item quantity updated successfully",
-            data: updatedCartItem,
-        });
-    } catch (error) {
-        console.error();
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-// Remove item from cart
-const removeFromCart = async (req, res) => {
-    try {
-        const { cartItemId } = req.params;
-        await Cart.findByIdAndDelete(cartItemId);
-        res.status(200).json({
-            success: true,
-            message: "Item removed from cart successfully",
-        });
-    } catch (error) {
-        console.error();
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
 
 module.exports = {
     addToCart,

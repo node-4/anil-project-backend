@@ -6,41 +6,29 @@ const otpService = require("../services/otp");
 const { createResponse } = require("../utils/response");
 const Wallet = require("../models/wallet");
 const Wishlist = require("../models/wishlist");
-// Define a signup function that creates a new user document in the database
 exports.signup = async (req, res) => {
-    const { name, email, password, phone } = req.body;
-
     try {
-        // Check if a user with the given email already exists in the database
+        const { name, email, password, phone } = req.body;
         const existingUser = await User.findOne({ email });
-
         if (existingUser) {
             return createResponse(res, 409, "Email address already in use");
         }
-
-        // Generate a random OTP and send it to the user's phone number
-
-        // Create a new user document in the database with the given information
         const newUser = new User({
             name,
             email,
             password,
             phone,
         });
-
         await newUser.save();
         const wallet = await Wallet.create({ userId: newUser._id });
         console.log(wallet);
         await Wishlist.create({ userId: newUser._id });
-        // Send a response indicating that the user was successfully created
         return createResponse(res, 201, "User created successfully", newUser);
     } catch (err) {
         console.error(err);
         return createResponse(res, 500, "Internal server error");
     }
 };
-
-// Define a login function that checks the user's credentials and sends an OTP for authentication
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
@@ -71,8 +59,6 @@ exports.login = async (req, res) => {
         return createResponse(res, 500, "Internal server error");
     }
 };
-
-// Define a function to handle OTP verification and log the user in
 exports.loginWithOTP = async (req, res) => {
     try {
         // Check if a user with the given email exists in the database
@@ -113,40 +99,27 @@ exports.loginWithOTP = async (req, res) => {
         return createResponse(res, 500, "Internal server error");
     }
 };
-// const otp = otpService.generateOTP();
-
 exports.verifyOTP = async (req, res) => {
-    const { otp } = req.body;
-
     try {
-        // Check if a user with the given userId exists in the database
+        const { otp } = req.body;
         const user = await User.findById(req.params.id);
-
         if (!user) {
             return createResponse(res, 404, "User not found");
         }
-
-        // Check if the OTP matches the one stored in the database
         if (otp !== user.otp) {
             return createResponse(res, 401, "Invalid OTP");
         }
         const accessToken = jwt.sign({ id: user._id }, secret, {
             expiresIn: accessTokenTime,
         });
-
-        // If OTP is valid, clear it from the user document and send a response indicating that the OTP was verified successfully
         user.otp = null;
         await user.save();
-
-        return createResponse(res, 200, "OTP verified successfully", {
-            accessToken,
-        });
+        return createResponse(res, 200, "OTP verified successfully", { accessToken, });
     } catch (err) {
         console.error(err);
         return createResponse(res, 500, "Internal server error");
     }
 };
-
 exports.resendOTP = async (req, res) => {
     try {
         // Check if a user with the given userId exists in the database
@@ -174,6 +147,26 @@ exports.resendOTP = async (req, res) => {
         return createResponse(res, 500, "Internal server error");
     }
 };
+exports.updateUserType = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        let findUser = await User.findById(userId);
+        if (!findUser) {
+            return createResponse(res, 404, "User not found");
+        } else {
+            if (findUser.userType == "B2B") {
+                const user = await User.findByIdAndUpdate({ _id: findUser._id }, { $set: { userType: "B2C" } }, { new: true, });
+                return createResponse(res, 200, "Switch to B2C.", user);
+            }
+            if (findUser.userType == "B2C") {
+                const user = await User.findByIdAndUpdate({ _id: findUser._id }, { $set: { userType: "B2B" } }, { new: true, });
+                return createResponse(res, 200, "Switch to B2B.", user);
+            }
+        }
+    } catch (err) {
+        return createResponse(res, 500, "Internal server error");
+    }
+};
 //pass - *o78G6|C
 //user - tollerDeveloper
 const nodemailer = require("nodemailer");
@@ -188,11 +181,11 @@ exports.emailwithotp = async (req, res) => {
             const transporter = nodemailer.createTransport({
                 service: "Gmail",
                 host: "smtp.gmail.com",
-                port : 587 ,
-                secure : false,
+                port: 587,
+                secure: false,
                 auth: {
-                  user: "info@flyweis.technology",
-                  pass: "ygkojtgemllsgpgs",
+                    user: "info@flyweis.technology",
+                    pass: "ygkojtgemllsgpgs",
                 }
             });
             const mailOptions = {
@@ -206,16 +199,16 @@ exports.emailwithotp = async (req, res) => {
                     `for reset password\n\n` +
                     `If you did not request this, please ignore this email and your password will remain unchanged.\n`,
             };
-            transporter.sendMail(mailOptions, (error,info) => {
+            transporter.sendMail(mailOptions, (error, info) => {
                 if (error) {
                     console.error(error);
                     return res.status(500).json({
                         message:
                             "Could not send email. Please try again later.",
                     });
-                }else{
+                } else {
                     console.log(info.response);
-                    res.status(200).json({message: "otp sent successfully",otp: otp,userId: user._id,});
+                    res.status(200).json({ message: "otp sent successfully", otp: otp, userId: user._id, });
                 }
             });
             return createResponse(res, 200, "otp sent", {
@@ -231,11 +224,11 @@ exports.emailwithotp = async (req, res) => {
             const transporter = nodemailer.createTransport({
                 service: "Gmail",
                 host: "smtp.gmail.com",
-                port : 587 ,
-                secure : false,
+                port: 587,
+                secure: false,
                 auth: {
-                  user: "info@flyweis.technology",
-                  pass: "ygkojtgemllsgpgs",
+                    user: "info@flyweis.technology",
+                    pass: "ygkojtgemllsgpgs",
                 }
             });
             // Define the email options

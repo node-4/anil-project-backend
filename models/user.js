@@ -8,13 +8,11 @@ const userSchema = new mongoose.Schema(
         },
         email: {
             type: String,
-            // unique: true,
             default: "",
             lowercase: true,
         },
         password: {
             type: String,
-            // required: true,
         },
         role: {
             type: String,
@@ -35,6 +33,15 @@ const userSchema = new mongoose.Schema(
         isVerified: {
             type: Boolean,
             default: false,
+        },
+        isB2BVerified: {
+            type: Boolean,
+            default: false,
+        },
+        userType: {
+            type: String,
+            enum: ["B2B", "B2C"],
+            default: "B2C",
         },
     },
     { timestamps: true }

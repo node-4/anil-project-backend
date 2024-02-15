@@ -16,15 +16,12 @@ const paymentSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-
         payment_Id: {
             type: String,
         },
-
         receipt: {
             type: String,
         },
-
         status: {
             type: String,
             required: true,
@@ -34,6 +31,10 @@ const paymentSchema = new mongoose.Schema(
             type: Number,
             required: true,
             default: 0.0,
+        },
+        paymentOrderType: {
+            type: String,
+            enum: ["B2B", "B2C"],
         },
     },
     { timestamps: true }

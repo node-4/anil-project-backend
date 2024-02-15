@@ -9,4 +9,5 @@ router.post("/login-with-otp", userController.loginWithOTP);
 router.post("/email-with-otp", userController.emailwithotp);
 router.post("/verify-otp/:id", userController.verifyOTP);
 router.get("/resend-otp/:id", userController.resendOTP);
+router.put("/updateUserType/:userId", userController.updateUserType);
 module.exports = router;
