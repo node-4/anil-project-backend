@@ -32,10 +32,8 @@ const companyDetailsSchema = new mongoose.Schema(
             // required: true,
         },
         gstinOrPanImage: {
-            type: Object,
-            default: {},
+            type: String,
         },
-
         payment: {
             type: [mongoose.SchemaTypes.ObjectId],
             ref: "Payment",

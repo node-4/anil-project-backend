@@ -4,16 +4,13 @@ const User = require("../models/user");
 // Create vendor verification
 exports.createVendorVerification = async (req, res) => {
     try {
+        req.body.gstinOrPanImage = req.file.path;
         const newVendorVerification = new VendorVerification(req.body);
-
         const savedVendorVerification = await newVendorVerification.save();
-
-        createResponse(
-            res,
-            200,
-            "Vendor verification created successfully",
-            savedVendorVerification
-        );
+        const user = await User.findById(savedVendorVerification.userId);
+        user.isVerified = true;
+        await user.save()
+        createResponse(res, 200, "Vendor verification created successfully", savedVendorVerification);
     } catch (err) {
         console.error(err);
         createResponse(res, 500, "Server Error");
@@ -23,17 +20,9 @@ exports.createVendorVerification = async (req, res) => {
 // Get all vendor verifications
 exports.getAllVendorVerifications = async (req, res) => {
     try {
-        const vendorVerifications = await VendorVerification.find()
-            .populate("userId")
-            .sort({ createdAt: -1 })
-            .lean();
+        const vendorVerifications = await VendorVerification.find().populate("userId").sort({ createdAt: -1 }).lean();
 
-        createResponse(
-            res,
-            200,
-            "Vendor verifications fetched successfully",
-            vendorVerifications
-        );
+        createResponse(res, 200, "Vendor verifications fetched successfully", vendorVerifications);
     } catch (err) {
         console.error(err);
         createResponse(res, 500, "Server Error");
@@ -69,6 +58,9 @@ exports.getVendorVerificationById = async (req, res) => {
 // Update vendor verification
 exports.updateVendorVerification = async (req, res) => {
     try {
+        if (req.file) {
+            req.body.gstinOrPanImage = req.file.path;
+        }
         const vendorVerification = await VendorVerification.findById(
             req.params.id,
             req.body,
@@ -81,18 +73,11 @@ exports.updateVendorVerification = async (req, res) => {
         }
 
         const savedVendorVerification = await vendorVerification.save();
-        if (
-            savedVendorVerification.isVerified === true &&
-            savedVendorVerification.emailVerification === true &&
-            savedVendorVerification.phoneVerification === true &&
-            savedVendorVerification.gstinOrPanVerification === true
-        ) {
+        if (savedVendorVerification.isVerified === true && savedVendorVerification.emailVerification === true && savedVendorVerification.phoneVerification === true && savedVendorVerification.gstinOrPanVerification === true) {
             const user = await User.findById(savedVendorVerification.userId);
             user.isVerified = true;
-            user.role = "Vendor";
             await user.save();
         }
-
         createResponse(
             res,
             200,

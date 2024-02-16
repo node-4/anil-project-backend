@@ -1,4 +1,5 @@
 const router = require("express").Router();
+
 const verificationController = require("../controllers/vendorVerification");
 router.post("/", verificationController.createVendorVerification);
 router.get("/", verificationController.getAllVendorVerifications);

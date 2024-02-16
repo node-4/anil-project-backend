@@ -1,5 +1,6 @@
 const CompanyDetails = require("../models/companyDetails");
 const { createResponse } = require("../utils/response");
+const User = require("../models/user");
 const VendorVerification = require("../models/vendorVerification");
 // Get all company details
 exports.getAllCompanyDetails = async (req, res) => {
@@ -53,35 +54,14 @@ exports.getCompanyDetailsById = async (req, res) => {
 // Create a new company details
 exports.createCompanyDetails = async (req, res) => {
     try {
-        const { userId, name, address, phone, email, website, gstin, payment } =
-            req.body;
-        // if (
-        //     !userId ||
-        //     !name ||
-        //     !address ||
-        //     !phone ||
-        //     !email ||
-        //     !website ||
-        //     !gstin
-        // ) {
-        //     return createResponse(
-        //         res,
-        //         400,
-        //         "Please fill all the required fields"
-        //     );
-        // }
-        req.body.gstinOrPanImage = {
-            url: req.file.location,
-            key: req.file.key,
-        };
+        const { userId, name, address, phone, email, website, gstin, payment } = req.body;
+        req.body.gstinOrPanImage = req.file.path;
         const companyDetails = await CompanyDetails.create(req.body);
-        await VendorVerification.create({ userId });
-        createResponse(
-            res,
-            201,
-            "Successfully created company details",
-            companyDetails
-        );
+        await VendorVerification.create(req.body);
+        const user = await User.findById(companyDetails.userId);
+        user.isB2BVerified = true;
+        await user.save()
+        createResponse(res, 201, "Successfully created company details", companyDetails);
     } catch (error) {
         createResponse(
             res,
