@@ -61,9 +61,7 @@ const getAllProducts = async (req, res) => {
         if (req.query.maxPrice) {
             var maxPrice = req.query.maxPrice;
         }
-
-        const productType = req.query.productType || "B2C"; // default to B2C if productType is not specified
-
+        const productType = req.query.productType || "B2C";
         const pipeline = [
             { $match: filter },
             {
@@ -82,6 +80,8 @@ const getAllProducts = async (req, res) => {
                     userTypeDiscount: 1,
                     defaultPrice: 1,
                     discountPercent: 1,
+                    rating: 1,
+                    productType: 1,
                     price: "$price",
                     discountedPrice: {
                         $cond: [
@@ -365,9 +365,7 @@ const deleteProduct = async (req, res) => {
 // Route handler for getting the most selling products
 const getMostSellingProducts = async (req, res) => {
     try {
-        const products = await Product.find({})
-            .sort({ soldCount: -1 }) // sort by soldCount in descending order
-            .limit(20); // limit to 10 results
+        const products = await Product.find({}).sort({ soldCount: -1 }).limit(20).select('-__v -updatedAt -createdAt'); // limit to 10 results
         if (products.length === 0) {
             return createResponse(res, 404, "No products found");
         }
